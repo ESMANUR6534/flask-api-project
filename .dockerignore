@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+venv/
+.env
+users.sqlite3
+.git
+.gitignore
