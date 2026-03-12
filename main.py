@@ -20,6 +20,15 @@ class users(db.Model):
         self.name = name
         self.email = email
 
+class product(db.Model):
+    product_id=db.Column("id",db.Integer,primary_key=True)
+    product_name =db.Column(db.String(100))
+    product_price =db.Column(db.Integer(100))
+    created_by=db.Column(db.Integer,db.foreignKey('user_id'))
+
+
+
+
 def token_required(f):
     
     @wraps(f)
@@ -93,6 +102,19 @@ def user(current_user):
         email = found_user.email if found_user else None
 
     return render_template("user.html", email=email)
+
+@app.route("/product",methods=["POST", "GET"])
+def product():
+    
+    if request.method=="POST":
+        product_name=request.form["name"]
+        product_price=request.form["price"]
+        new_product=product(product_name=product_name,product_price=product_price)
+        db.jwt.add(new_product)
+        db.jwt.commit()
+        flash("ürün basariyla eklendi")
+
+    return redirect(url_for("home"))
 
 @app.route("/logout")
 def logout():

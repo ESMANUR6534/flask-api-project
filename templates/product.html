@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}product management {% endblock %}
+{% block content%}
+<div class container>
+    <h2>Yeni Urun Ekle</h2>
+    <form action ="/product" method=""POST>
+        <p>
+            <label> urun adi:</label><br>
+            <input type="text" name="name"  placeholder="örn:salatalik"requared>
+        </p>
+        <p>
+            <label> fiyat:</label><br>
+            <input type="number" name="price"  placehplder="örn:50"requared>
+        </p>
+        <button type="submit">urunu  kaydet</button>
+    </form>
+    <hr>
+    <h2>kayitli urunler</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>urun adi</th>
+                <th>fiyat</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for itim in products %}
+            <tr>
+
+<td> {{item_product_id}}</td>
+<td> {{ item_product_name}}</td>
+<td> {{item_products_price}} TL</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
