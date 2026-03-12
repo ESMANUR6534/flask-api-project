@@ -23,10 +23,8 @@ class users(db.Model):
 class product(db.Model):
     product_id=db.Column("id",db.Integer,primary_key=True)
     product_name =db.Column(db.String(100))
-    product_price =db.Column(db.Integer(100))
-    created_by=db.Column(db.Integer,db.foreignKey('user_id'))
-
-
+    product_price =db.Column(db.Integer)
+    created_by=db.Column(db.Integer,db.ForeignKey('users.id'))
 
 
 def token_required(f):
