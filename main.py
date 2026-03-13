@@ -20,7 +20,7 @@ class users(db.Model):
         self.name = name
         self.email = email
 
-class product(db.Model):
+class Product(db.Model):
     product_id=db.Column("id",db.Integer,primary_key=True)
     product_name =db.Column(db.String(100))
     product_price =db.Column(db.Integer)
@@ -108,11 +108,26 @@ def product():
         product_name=request.form["name"]
         product_price=request.form["price"]
         new_product=product(product_name=product_name,product_price=product_price)
-        db.jwt.add(new_product)
-        db.jwt.commit()
+        db.session.add(new_product)
+        db.session.commit()
         flash("ürün basariyla eklendi")
+    all_products=Product.query.all()
+    return render_template("product.html",products=all_products)
+    
+@app.route("/register" , methods=["POST", "GET"])
+def register():
+    if request.method=="POST":
+        user_name=request.form["nm"]
+        user_email=request.form["email"]
+        new_user=users(name=user_name,email=user_email)
+        db.session.add(new_user)
+        db.session.commit()
+        flash("kayit basarili,simdi giris yapabilirsiniz")
+        return redirect(url_for("login"))
+    return render_template("login.html")
+    
 
-    return redirect(url_for("home"))
+
 
 @app.route("/logout")
 def logout():
