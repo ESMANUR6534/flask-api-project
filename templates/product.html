@@ -3,7 +3,7 @@
 {% block content%}
 <div class container>
     <h2>Yeni Urun Ekle</h2>
-    <form action ="/product" method=""POST>
+    <form action ="/product" method="POST">
         <p>
             <label> urun adi:</label><br>
             <input type="text" name="name"  placeholder="örn:salatalik"requared>
@@ -27,10 +27,10 @@
         <tbody>
             {% for item in products %}
             <tr>
-
-<td> {{item_product_id}}</td>
-<td> {{ item_product_name}}</td>
-<td> {{item_products_price}} TL</td>
+                <td> {{item.product_id}}</td>
+                <td> {{ item.product_name}}</td>
+                <td> {{item.product_price}} TL</td>
+                <td><a href="/delete/{{ item.product_id }}">sil</a></td>
             </tr>
             {% endfor %}
         </tbody>

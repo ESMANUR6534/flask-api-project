@@ -1,7 +1,7 @@
 import jwt
 import datetime
 from functools import wraps
-from flask import Flask, redirect, url_for, render_template, request, flash, make_response
+from flask import Flask, redirect, url_for, render_template, request, flash,make_response ,jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -102,17 +102,22 @@ def user(current_user):
     return render_template("user.html", email=email)
 
 @app.route("/product",methods=["POST", "GET"])
-def product():
+@app.route("/")
+@token_required
+def product(current_user):
     
     if request.method=="POST":
         product_name=request.form["name"]
         product_price=request.form["price"]
-        new_product=product(product_name=product_name,product_price=product_price)
+
+        new_product=Product(product_name=product_name,product_price=product_price,created_by=current_user)
         db.session.add(new_product)
         db.session.commit()
         flash("ürün basariyla eklendi")
-    all_products=Product.query.all()
+        return redirect(url_for("product"))
+    all_products=Product.query.filter_by(created_by=current_user).all()
     return render_template("product.html",products=all_products)
+
     
 @app.route("/register" , methods=["POST", "GET"])
 def register():
@@ -135,6 +140,17 @@ def logout():
     resp = make_response(redirect(url_for("login")))
     resp.set_cookie('access_token', '', expires=0) 
     return resp
+
+@app.route("/delete/<int:id>")
+@token_required
+def delete_product(current_user,id):
+    
+    product_to_delete=Product.query.filter_by(product_id=id, created_by=current_user).first()
+    if product_to_delete:
+        db.session.delete(product_to_delete)
+        db.session.commit()
+        flash("urun basariyla silindi!")
+        return redirect(url_for("product"))
 
 if __name__ == "__main__":
     with app.app_context():
