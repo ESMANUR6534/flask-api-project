@@ -1,16 +1,21 @@
-# Flask JWT Auth & Docker Project 🚀
+#  Flask E-Ticaret Backend Projesi
 
-Bu proje, staj sürecimin ilk haftasında geliştirdiğim; güvenli kimlik doğrulama (JWT), veritabanı yönetimi (SQLAlchemy) ve modern dağıtım (Docker) standartlarını içeren bir web uygulamasıdır.
+Bu proje, bir staj kapsamında geliştirilen; kullanıcı yetkilendirme (JWT) ve ürün yönetimi (CRUD) işlemlerini içeren bir REST API çalışmasıdır.
 
-## 🛠️ Özellikler
-- **JWT (JSON Web Token):** Güvenli oturum yönetimi ve çerez tabanlı kimlik doğrulama.
-- **Password Hashing:** Kullanıcı şifreleri veritabanında güvenli bir şekilde saklanır.
-- **SQLAlchemy:** SQLite veritabanı ile kullanıcı verileri yönetimi.
-- **Dockerize:** Uygulama, Docker konteyneri sayesinde her ortamda tek komutla çalışabilir.
+## 🛠 Kullanılan Teknolojiler
+* **Python** & **Flask**
+* **SQLAlchemy** (Veritabanı Yönetimi)
+* **PyJWT** (Token Tabanlı Güvenlik)
+* **Thunder Client** (API Testleri)
 
-## 🐳 Docker ile Çalıştırma
-Sisteminize Docker kuruluysa şu komutlarla projeyi ayağa kaldırabilirsiniz:
+## 📌 Özellikler![alt text](<Ekran görüntüsü 2026-03-24 125738.png>)
+- [x] Kullanıcı Kaydı ve Giriş İşlemleri
+- [x] JWT Token ile Güvenli Erişim
+- [x] Ürün Listeleme ve Ekleme
+- [x] **Ürün Silme (Delete API)** -> *yeni tamamlandi!*
+- [ ] Ürün Güncelleme (Update API) -> *Yapim Asamasinda*
 
-1. İmajı oluşturun:
-```bash
-docker build -t flask-staj-projesi .
+##  Başlangıç
+Projeyi yerelinizde çalıştırmak için:
+1. Bağımlılıkları yükleyin: `pip install -r requirements.txt`
+2. Uygulamayı başlatın: `python app.py`
