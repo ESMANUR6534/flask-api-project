@@ -8,14 +8,17 @@ Bu proje, bir staj kapsamında geliştirilen; kullanıcı yetkilendirme (JWT) ve
 * **PyJWT** (Token Tabanlı Güvenlik)
 * **Thunder Client** (API Testleri)
 
-## 📌 Özellikler![alt text](<Ekran görüntüsü 2026-03-24 125738.png>)
-- [x] Kullanıcı Kaydı ve Giriş İşlemleri
-- [x] JWT Token ile Güvenli Erişim
-- [x] Ürün Listeleme ve Ekleme
-- [x] **Ürün Silme (Delete API)** -> *yeni tamamlandi!*
-- [ ] Ürün Güncelleme (Update API) -> *Yapim Asamasinda*
+## temel Özellikler! (<Ekran görüntüsü 2026-03-24 125738.png>)
+-  Kullanıcı Kaydı ve Giriş İşlemleri
+-  JWT Token ile Güvenli Erişim
+-  Ürün Listeleme ve Ekleme
+- ürün silme(API)
+-  Ürün Güncelleme (Update API) -> 
+- Hata yönetimi
+
 
 ##  Başlangıç
 Projeyi yerelinizde çalıştırmak için:
 1. Bağımlılıkları yükleyin: `pip install -r requirements.txt`
-2. Uygulamayı başlatın: `python app.py`
+2.çevresel değişiklikleri ayarlayın:SECRET_KEY=gizli_anahtariniz DATABASE_URL=sqlite:///instance/users.sqlite3
+3. Uygulamayı başlatın: `python main.py`
