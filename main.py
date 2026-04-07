@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import jwt
 import datetime
 from functools import wraps
@@ -7,9 +10,11 @@ from werkzeug.security import generate_password_hash,check_password_hash
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
 
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'esmanur_staj_projesi_cok_gizli_anahtar_123456'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.sqlite3'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+app.config['JWT_SECRET_KEY']=os.getenv('JWT_SECRET_KEY')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -71,7 +76,34 @@ def home():
 def view():
     return render_template("view.html", values=users.query.all())
 
-@app.route("/login", methods=["POST","GET"])
+@app.route("/product/<int:id>", methods=["PATCH"])
+@token_required
+def update_product(current_user_id,id):
+    data = request.get_json()
+    product = Product.query.filter_by(product_id=id).first()
+    
+    if not product:
+        return jsonify({"message": "Urun bulunamadi!", "status": "error"}), 404
+
+    if product.created_by != current_user_id:
+        return jsonify({"message": "Bu urunu guncelleme yetkiniz yok!", "status": "error"}), 403
+
+    
+    try:
+        if "name" in data:
+            product.product_name = data["name"]
+        if "price" in data:
+            product.product_price = data["price"]
+ 
+        db.session.commit()
+        return jsonify({
+            "message": "Urun basariyla guncellendi","status": "success" }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Hata:{str(e)}"}), 500
+
+@app.route("/login", methods=["POST"])
 def login():
     data =request.get_json()
     user_input=data.get("nm")
@@ -206,22 +238,29 @@ def list_products():
         "current_page":paginated_data.page
         }),200
 
-@app.route("/register" , methods=["POST", "GET"])
+@app.route("/register" , methods=["POST"])
 def register():
+    data = request.get_json()
+    if not data:
+        return jsonify({"message":"JSON verisi bulunamadi"}),400
+    
 
-    if request.method=="POST":
-        user_name=request.form["nm"]
-        user_email=request.form["email"]
-        raw_password=request.form["password"]
-        hashed_pw=generate_password_hash(raw_password, method='pbkdf2:sha256')
+    user_name=data.get("nm")
+    user_email=data.get("email")
+    raw_password=data.get("password")
 
-        new_user=users(name=user_name,email=user_email, password=hashed_pw)
+    if not user_name or not user_email or not raw_password:
+        return jsonify({"message":"Eksik bilgi gonderdiniz"}),400
+    hashed_pw=generate_password_hash(raw_password, method='pbkdf2:sha256')
+
+    new_user=users(name=user_name,email=user_email, password=hashed_pw)
+    try:
         db.session.add(new_user)
         db.session.commit()
-        flash("kayit basarili,simdi giris yapabilirsiniz")
-        return redirect(url_for("login"))
-    return render_template("register.html")
-    
+        return jsonify({"message":"kayit basarili,simdi giris yapabilirsiniz"}),201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message":f"kayit sirasinda hata oldu:{str(e)}"}),500   
 
 @app.route("/logout")
 def logout():
