@@ -8,6 +8,7 @@ from flask import Flask, redirect, url_for, render_template, request, flash,make
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash,check_password_hash
 from flask import jsonify
+from flasgger import Swagger
 from werkzeug.exceptions import HTTPException
 
 
@@ -18,6 +19,31 @@ app.config['JWT_SECRET_KEY']=os.getenv('JWT_SECRET_KEY')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": 'apispec_1',
+            "route": '/apispec_1.json',
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs/",
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT Token girin: Bearer <TOKEN>"
+        }
+    }
+}
+
+swagger = Swagger(app, config=swagger_config)
 
 class users(db.Model):
     _id = db.Column("id", db.Integer, primary_key=True)
@@ -31,6 +57,14 @@ class users(db.Model):
         self.name = name
         self.email = email
         self.password= password
+
+class Product(db.Model):
+    product_id=db.Column("id",db.Integer,primary_key=True)
+    product_name =db.Column(db.String(100), nullable=False)
+    product_price =db.Column(db.Float)
+    category = db.Column(db.String(50))
+    created_by=db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
 
 def token_required(f):
     @wraps(f)
@@ -54,14 +88,6 @@ def token_required(f):
         return f(current_user_id,*args, **kwargs)
     return decorated
  
-
-class Product(db.Model):
-    product_id=db.Column("id",db.Integer,primary_key=True)
-    product_name =db.Column(db.String(100), nullable=False)
-    product_price =db.Column(db.Float)
-    category = db.Column(db.String(50))
-    created_by=db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-
 @app.errorhandler(Exception)
 def handle_exception(e):
     if isinstance(e, HTTPException):
@@ -76,9 +102,38 @@ def home():
 def view():
     return render_template("view.html", values=users.query.all())
 
+
 @app.route("/product/<int:id>", methods=["PATCH"])
 @token_required
 def update_product(current_user_id,id):
+    """
+    Mevcut bir ürünü günceller
+    ---
+    security:
+      - Bearer: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+        description: Güncellenecek ürünün ID'si
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+              example: "Güncellenmiş Masa"
+            price:
+              type: number
+              example: 550.00
+    responses:
+      200:
+        description: Ürün başariyla güncellendi
+      404:
+        description: Ürün bulunamadi
+    """
     data = request.get_json()
     product = Product.query.filter_by(product_id=id).first()
     
@@ -105,6 +160,27 @@ def update_product(current_user_id,id):
 
 @app.route("/login", methods=["POST"])
 def login():
+    """
+    Kullanici girişi yapar ve JWT döner
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            nm:
+              type: string
+              example: "kullanici_adi"
+            password:
+              type: string
+              example: "123456"
+    responses:
+      200:
+        description: Başarili giriş, tokenlar döner
+      401:
+        description: Hatali kimlik bilgileri
+    """
     data =request.get_json()
     user_input=data.get("nm")
     password_input=data.get("password")
@@ -133,9 +209,47 @@ datetime.timedelta(days=7)
         }),200
     return jsonify({"message":"hatali kullanici adi veya sifre!"}),401
 
+@app.route("/me", methods=["GET"])
+@token_required
+def get_me(current_user_id):
+    """
+    Giriş yapan kullanicinin kendi bilgilerini getirir
+    ---
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Kullanici bilgileri
+      401:
+        description: Yetkisiz erişim
+    """
+    user = users.query.get(current_user_id)
+    return jsonify({
+        "id": user._id,
+        "name": user.name,
+        "email": user.email
+    }), 200
+
 @app.route("/refresh", methods=["POST"])
 def refresh():
     data = request.get_json()
+    """
+    Refresh token kullanarak yeni Access Token alir
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+    responses:
+      200:
+        description: Yeni access token başariyla oluşturuldu
+      401:
+        description: Geçersiz veya süresi dolmuş refresh token
+    """
     refresh_token = data.get('refresh_token')
 
     if not refresh_token:
@@ -164,8 +278,31 @@ def refresh():
 
 @app.route("/user", methods=["POST","GET"])
 @token_required
-def user(current_user):
-    found_user = users.query.filter_by(_id=current_user).first()
+def user(current_user_id):
+    """
+    Giriş yapan kullanicinin bilgilerini getirir veya ürün sayfasina yönlendirir
+    ---
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Kullanici bilgileri başariyla getirildi
+        schema:
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+      302:
+        description: POST isteği sonrasi ürün ekleme sayfasina yönlendirme
+      401:
+        description: Yetkisiz erişim (Geçersiz Token)
+      404:
+        description: Kullanici bulunamadi
+    """
+    found_user = users.query.filter_by(_id=current_user_id).first()
     email = None
 
     if request.method == "POST":
@@ -182,29 +319,70 @@ def user(current_user):
 @app.route("/product",methods=["POST"])
 @token_required
 def add_product(current_user_id):
-     data= request.get_json()
-     if not data :
-         return jsonify({"message":"veri gönderilmedi","status":"error"}),400
-     product_name=data.get("name")
-     product_price=data.get("price")
+    """
+    Yeni bir ürün ekler
+    ---
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+              example: "Masa"
+            price:
+              type: number
+              example: 450.00
+    responses:
+      201:
+        description: Ürün başariyla eklendi
+      400:
+        description: Geçersiz veri girişi
+    """
+         
+    data= request.get_json()
+    if not data :
+        return jsonify({"message":"veri gönderilmedi","status":"error"}),400
+    product_name=data.get("name")
+    product_price=data.get("price")
 
-     if not product_name or not product_price:
-        return jsonify({"message":"urun adi ve fiyat bos birakilamaz","status":"error"}),400
-     try:
+    if not product_name or not product_price:
+      return jsonify({"message":"urun adi ve fiyat bos birakilamaz","status":"error"}),400
+    try:
         product_price=float(product_price)
         if product_price <=0:
             return jsonify({"message":"fiyat 0'dan buyuk olmalidir!","status":"error"}),400
-     except (ValueError,TypeError):
+    except (ValueError,TypeError):
         return jsonify({"message":"fiyat gecerli bir sayi olmalidir!","status":"error"}),400
     
-     new_product=Product(product_name=product_name,product_price=product_price,created_by=current_user_id)
-     db.session.add(new_product)
-     db.session.commit()
-
-     return jsonify({"message":"urun basariyla eklendi","status":"success","product":{"name":product_name,"price":product_price}}),201
+    new_product=Product(product_name=product_name,product_price=product_price,created_by=current_user_id)
+    db.session.add(new_product)
+    db.session.commit()
+    return jsonify({"message":"urun basariyla eklendi","status":"success","product":{"name":product_name,"price":product_price}}),201
 
 @app.route("/products",methods=["GET"])
 def list_products():
+    """
+    Ürünleri listeler ve filtreler
+    ---
+    parameters:
+      - name: category
+        in: query
+        type: string
+      - name: min_price
+        in: query
+        type: number
+      - name: page
+        in: query
+        type: integer
+        default: 1
+    responses:
+      200:
+        description: Ürün listesi döner
+    """
     category =request.args.get('category')
     min_price=request.args.get('min_price',type=float)
     max_price=request.args.get('max_price',type=float)
@@ -240,11 +418,32 @@ def list_products():
 
 @app.route("/register" , methods=["POST"])
 def register():
+    """
+    Yeni kullanici kaydi olusturur
+    ---
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            nm:
+              type: string
+              example: "ahmet123"
+            email:
+              type: string
+              example: "ahmet@mail.com"
+            password:
+              type: string
+              example: "sifre123"
+    responses:
+      201:
+        description: Kayit başaili
+    """
     data = request.get_json()
     if not data:
         return jsonify({"message":"JSON verisi bulunamadi"}),400
     
-
     user_name=data.get("nm")
     user_email=data.get("email")
     raw_password=data.get("password")
@@ -262,13 +461,42 @@ def register():
         db.session.rollback()
         return jsonify({"message":f"kayit sirasinda hata oldu:{str(e)}"}),500   
 
-@app.route("/logout")
-def logout():
-    return jsonify({"message":"basariyla cikis yapildi.lutfen istemci tarafindaki tokeni silin."}),200
+@app.route("/logout", methods=["POST"])
+@token_required
+def logout(current_user_id):
+    """
+    Kullanici çikiş yapar ve refresh token'i veritabanindan siler
+    ---
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Başariyla çikiş yapildi, refresh token silindi
+    """
+    user = users.query.get(current_user_id)
+    user = users.query.get(current_user_id)
+    if user:
+        user.refresh_token = None
+        db.session.commit()
+    return jsonify({"message":"basariyla cikis yapildi, refresh token silindi."}),200
 
-@app.route("/delete_product/<int:id>",methods=["POST","DELETE"])
+@app.route("/delete_product/<int:id>",methods=["DELETE"])
 @token_required
 def delete_product(current_user_id,id):
+    """
+    Ürünü siler
+    ---
+    security:
+      - Bearer: []
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Silme başarili
+    """
     product=Product.query.get(id)
     if not product:
         return jsonify({"message":"urun bulunamadi!","status":"error"}),404
