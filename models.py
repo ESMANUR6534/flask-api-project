@@ -21,7 +21,7 @@ class Product(db.Model):
     product_name =db.Column(db.String(100), nullable=False)
     product_price =db.Column(db.Float)
     category = db.Column(db.String(50))
-    created_by=db.Column(db.Integer, db.ForeignKey('users_id'), nullable=False)
+    created_by=db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
 
 
