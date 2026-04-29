@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
-from models import db, users, Product
+from flask import Blueprint, request,jsonify
+from database_models import db,Product
 from auth import token_required
 
-product_bp = Blueprint('product', __name__)
 
+product_bp = Blueprint('product', __name__)
 
 @product_bp.route("/product",methods=["POST"])
 @token_required
@@ -50,7 +50,17 @@ def add_product(current_user_id):
     new_product=Product(product_name=product_name,product_price=product_price,created_by=current_user_id)
     db.session.add(new_product)
     db.session.commit()
-    return jsonify({"message":"urun basariyla eklendi","status":"success","product":{"name":product_name,"price":product_price}}),201
+    return jsonify({
+        "message":"urun basariyla eklendi",
+        "status":"success",
+        "product":{
+            "id":new_product.product_id,
+            "name":product_name,
+            "price":product_price
+        }
+    }), 201
+
+
 
 @product_bp.route("/products",methods=["GET"])
 def list_products():
@@ -103,7 +113,7 @@ def list_products():
         "total":paginated_data.total,
         "pages":paginated_data.pages,
         "current_page":paginated_data.page
-        }),200
+    }), 200
 
 @product_bp.route("/product/<int:id>", methods=["PATCH"])
 @token_required
@@ -161,7 +171,7 @@ def update_product(current_user_id,id):
         return jsonify({"message": f"Hata:{str(e)}"}), 500
 
 
-@product_bp.route("/delete_product/<int:id>",methods=["DELETE"])
+@product_bp.route("/product/<int:id>",methods=["DELETE"])
 @token_required
 def delete_product(current_user_id,id):
     """
@@ -178,7 +188,7 @@ def delete_product(current_user_id,id):
       200:
         description: Silme başarili
     """
-    product=Product.query.get(id)
+    product=db.session.get(Product,id)
     if not product:
         return jsonify({"message":"urun bulunamadi!","status":"error"}),404
     

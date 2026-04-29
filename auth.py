@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from models import db, users 
+from database_models import db, users 
 import jwt
 import datetime
 import os
@@ -129,7 +129,6 @@ datetime.timedelta(days=7)
 
 @auth_bp.route("/refresh", methods=["POST"])
 def refresh():
-    data = request.get_json()
     """
     Refresh token kullanarak yeni Access Token alir
     ---
@@ -138,15 +137,19 @@ def refresh():
         in: body
         required: true
         schema:
+          type: object
           properties:
             refresh_token:
               type: string
+              description: Kullanicinin login sirasinda aldigi refresh token
+              example: "eyJhbGciOiJIUzI1Ni..."
     responses:
       200:
-        description: Yeni access token başariyla oluşturuldu
+        description: Yeni access token basariyla olusturuldu
       401:
-        description: Geçersiz veya süresi dolmuş refresh token
+        description: Gecersiz veya suresi dolmus refresh token
     """
+    data = request.get_json()
     refresh_token = data.get('refresh_token')
 
     if not refresh_token:
@@ -154,12 +157,16 @@ def refresh():
 
     try:
         decoded = jwt.decode(refresh_token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
-        user_id = decoded['user_id']
+        user_id = decoded.get('user_id')
+ 
+        user = users.query.filter_by(_id=user_id).first()
         
-        user = users.query.get(user_id)
-        if not user or user.refresh_token != refresh_token:
-            return jsonify({"message": "Gecersiz refresh token!"}), 401
+        if not user:
+            return jsonify({"message": "Kullanici bulunamadi!"}), 401
 
+        if user.refresh_token != refresh_token:
+            return jsonify({"message": "Token eslesme hatasi!"}), 401
+       
         new_access_token = jwt.encode({
             'user_id': user._id,
             'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
@@ -168,10 +175,9 @@ def refresh():
         return jsonify({"access_token": new_access_token}), 200
 
     except jwt.ExpiredSignatureError:
-        return jsonify({"message": "Refresh token suresi dolmus, tekrar giris yapin!"}), 401
-    except:
-        return jsonify({"message": "Gecersiz islem!"}), 401
-    
+        return jsonify({"message": "Refresh token suresi dolmus!"}), 401
+    except Exception as e:
+        return jsonify({"message": f"Teknik hata: {str(e)}"}), 500
 
 @auth_bp.route("/me", methods=["GET"])
 @token_required

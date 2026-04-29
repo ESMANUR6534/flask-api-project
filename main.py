@@ -1,9 +1,6 @@
-from models import db, users, Product 
+from database_models import db, users, Product 
 from flask import Flask, render_template, jsonify
 from werkzeug.exceptions import HTTPException
-from auth import auth_bp
-from products import product_bp
-from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
 from dotenv import load_dotenv
 import os

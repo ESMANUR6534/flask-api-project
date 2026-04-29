@@ -7,14 +7,15 @@ Bu proje, bir staj kapsamında geliştirilen; kullanıcı yetkilendirme (JWT) ve
 * **SQLAlchemy** (Veritabanı Yönetimi)
 * **PyJWT** (Token Tabanlı Güvenlik)
 * **Thunder Client** (API Testleri)
+* **Pytest** (Otomatik Birim ve Entegrasyon Testleri)
+* **Flasgger** (Swagger UI ile İnteraktif API Dokümantasyonu)
 
 ## temel Özellikler! (<Ekran görüntüsü 2026-03-24 125738.png>)
--  Kullanıcı Kaydı ve Giriş İşlemleri
--  JWT Token ile Güvenli Erişim
--  Ürün Listeleme ve Ekleme
-- ürün silme(API)
--  Ürün Güncelleme (Update API) -> 
-- Hata yönetimi
+-Güvenli Yetkilendirme: JWT tabanlı access_token ve refresh_token mekanizması.
+-İlişkisel Veritabanı: Kullanıcılar ve ürünler arasında ForeignKey ile kurulan bire-çok (One-to-Many) ilişki.
+-Kapsamlı Ürün Yönetimi (CRUD): Ürün ekleme, listeleme, güncelleme ve silme.
+-Otomatik Testler: Pytest ile hem başarılı hem de hatalı (fail) senaryoların test edilmesi.
+-Hata Yönetimi: Merkezi hata yakalama sistemi (handle_exception).i
 
 
 ##  Başlangıç
@@ -31,28 +32,21 @@ JWT_SECRET_KEY=jwt_ozel_anahtariniz
 DEBUG=True
 
 ## Son Yapılan Düzenlemeler
-* **Hata Düzeltme:** `register` fonksiyonundaki girintileme (indentation) sorunları giderildi ve verilerin JSON formatında doğru okunması sağlandı.
-* **Veritabanı Güncellemesi:** Kullanıcı kayıt ve login işlemleri SQLAlchemy üzerinden `instance/users.sqlite3` veritabanı ile senkronize edildi.
-* **Güvenlik:** Şifreler `werkzeug.security` kullanılarak hash'lendi.
+***Veritabanı Mimarisi: database_models.py içerisinde ForeignKey('users.id') düzeltmesi yapılarak ürünlerin kullanıcılarla ilişkisi stabilize edildi.***
+***Kod Standardı: Tüm API endpointleri için Swagger (OpenAPI) dokümantasyonu tamamlandı.***
+***Docker Hazırlığı: requirements.txt dosyasındaki karakter kodlaması (UTF-16 -> UTF-8) ve sürüm yazım hataları giderildi.***
 
 ## API Testleri ve Sonuçlar
 
-Projenin tüm temel fonksiyonları Postman üzerinden başarıyla test edilmiştir. Teknik kısıtlamalar nedeniyle koleksiyon dosyası yerine test sonuçları ekran görüntüleri ile belgelenmiştir.
-
-### 1. Kullanıcı Kaydı (Register)
-`POST /register` endpoint'i üzerinden yeni kullanıcı oluşturulmaktadır.
-* **Girdi:** `nm`, `email`, `password` (JSON)
-* **Sonuç:** Kullanıcı başarıyla veritabanına kaydedilmektedir.
-
-### 2. Kullanıcı Girişi (Login)
-`POST /login` endpoint'i ile kimlik doğrulaması yapılmaktadır.
-* **Sonuç:** Başarılı giriş sonrası `access_token` üretilmektedir.
-
-### 3. Profil Bilgileri (Me)
-`GET /me` endpoint'i, Bearer Token doğrulaması ile çalışmaktadır.
-* **Sonuç:** Token ile yapılan isteklerde kullanıcıya ait `id`, `name` ve `email` bilgileri başarıyla dönmektedir.
-
----
+Test Senaryosu,Endpoint,Beklenen HTTP Kodu,Durum
+Başarılı Kullanıcı Kaydı,POST /register,201,✅ Geçti
+Eksik Veriyle Kayıt Denemesi,POST /register,400,✅ Geçti
+Başarılı Kullanıcı Girişi,POST /login,200,✅ Geçti
+Yanlış Şifre/Kullanıcı ile Giriş,POST /login,401,✅ Geçti
+Yetkili Ürün Ekleme,POST /product,201,✅ Geçti
+Yetkisiz Ürün Ekleme Denemesi,POST /product,401,✅ Geçti
+Başarılı Ürün Silme,DELETE /product/1,200,✅ Geçti
+Olmayan Ürünü Silme Denemesi,DELETE /product/999,404,✅ Geçti
 
 ### Test Ekran Görüntüleri
 Aşağıdaki görseller, API'nın çalışma durumunu kanıtlamaktadır:
