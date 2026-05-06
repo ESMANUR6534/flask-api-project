@@ -215,7 +215,6 @@ def logout(current_user_id):
         description: Başariyla çikiş yapildi, refresh token silindi
     """
     user = users.query.get(current_user_id)
-    user = users.query.get(current_user_id)
     if user:
         user.refresh_token = None
         db.session.commit()
