@@ -1,10 +1,10 @@
-name: Flask API Testleri
+name: Flask API Testleri ve Docker Kontrolü
 
 on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
     - name: Kodlari GitHub'dan çek
@@ -23,3 +23,15 @@ jobs:
     - name: Pytest ile Testleri Çalistir
       run: |
         python -m pytest
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test 
+
+    steps:
+    - name: Kodlari GitHub'dan çek
+      uses: actions/checkout@v4
+
+    - name: Docker Image'ini Derle (Build)
+      run: |
+        docker build -t flask-api-app:latest .

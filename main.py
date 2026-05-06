@@ -4,8 +4,13 @@ from werkzeug.exceptions import HTTPException
 from flasgger import Swagger
 from dotenv import load_dotenv
 import os
+import logging
 
-
+logging.basicConfig(
+   filename='app.log',
+   level=logging.INFO,
+   format='%(asctime)s - %(levelname)s - %(message)s'
+)
 load_dotenv()
 
 app = Flask(__name__)
@@ -18,7 +23,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 def handle_exception(e):
     if isinstance(e, HTTPException):
       return jsonify({"status":"error","message":e.description}),e.code
+    logging.error(f"Sunucu Hatasi:{str(e)}")
     return jsonify({"status":"error","message":"sunucu hatasi olustu!"}),500
+
+
+ 
 
 
 db.init_app(app)

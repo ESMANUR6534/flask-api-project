@@ -5,7 +5,7 @@ import datetime
 import os
 from functools import wraps 
 from werkzeug.security import generate_password_hash,check_password_hash
-
+import logging
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -27,6 +27,7 @@ def token_required(f):
         except jwt.ExpiredSignatureError:
             return jsonify({"message":"Token suresi dolmus!"}),401
         except jwt.InvalidTokenError:
+            logging.warning("Gecersiz token ile erisim denendi!")
             return jsonify({"message":"gecersiz token!"}),401
         return f(current_user_id,*args, **kwargs)
     return decorated
