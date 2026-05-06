@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     steps:
     - name: Kodlari GitHub'dan çek
@@ -15,7 +15,7 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Bağimliliklari Yükle
+    - name: Bağimlilikleri Yükle
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
