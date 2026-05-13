@@ -3,21 +3,35 @@ from flask import Flask, render_template, jsonify
 from werkzeug.exceptions import HTTPException
 from flasgger import Swagger
 from dotenv import load_dotenv
+from extensions import limiter
+from flask_cors import CORS
 import os
 import logging
+
 
 logging.basicConfig(
    filename='app.log',
    level=logging.INFO,
    format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
 load_dotenv()
 
 app = Flask(__name__)
+limiter.init_app(app)
+CORS(app)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 app.config['JWT_SECRET_KEY']=os.getenv('JWT_SECRET_KEY')
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+
+@app.errorhandler(429)
+def ratelimit_handler(e):
+   return jsonify({
+      "status":"error",
+      "message":"cok fazla istek gonderdinşz! Lutfen bir dakika bekleyin."
+   }), 429
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -25,10 +39,6 @@ def handle_exception(e):
       return jsonify({"status":"error","message":e.description}),e.code
     logging.error(f"Sunucu Hatasi:{str(e)}")
     return jsonify({"status":"error","message":"sunucu hatasi olustu!"}),500
-
-
- 
-
 
 db.init_app(app)
 

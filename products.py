@@ -63,9 +63,9 @@ def add_product(current_user_id):
 
 
 @product_bp.route("/products",methods=["GET"])
-def list_products():
+def get_products():
     """
-    Ürünleri listeler ve filtreler
+      Ürünleri listeler ve filtreler
     ---
     parameters:
       - name: category
@@ -82,6 +82,7 @@ def list_products():
       200:
         description: Ürün listesi döner
     """
+
     category =request.args.get('category')
     min_price=request.args.get('min_price',type=float)
     max_price=request.args.get('max_price',type=float)
@@ -97,22 +98,19 @@ def list_products():
         query=query.filter(Product.product_price >= min_price)
     if max_price is not None:
         query=query.filter(Product.product_price <= max_price)
-     
+    
     paginated_data = query.paginate(page=page,per_page=per_page,error_out=False)
 
-    output=[]
-    for p in paginated_data.items:
-        output.append({
-            "id":p.product_id,
-            "name":p.product_name,
-            "price":p.product_price,
-            "category":p.category
-        })
     return jsonify({
-        "products":output,
-        "total":paginated_data.total,
-        "pages":paginated_data.pages,
-        "current_page":paginated_data.page
+        "products": [p.to_dict() for p in paginated_data.items],
+        "meta": {
+            "total_records": paginated_data.total,    
+            "total_pages": paginated_data.pages,      
+            "current_page": paginated_data.page,      
+            "per_page": paginated_data.per_page,     
+            "has_next": paginated_data.has_next,      
+            "has_prev": paginated_data.has_prev       
+        }
     }), 200
 
 @product_bp.route("/product/<int:id>", methods=["PATCH"])

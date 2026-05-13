@@ -40,9 +40,14 @@ JWT_SECRET_KEY=jwt_ozel_anahtariniz
 DEBUG=True
 
 ### Son Yapılan Düzenlemeler
-* Kod Standartları: Dairesel import (circular import) hataları database_models.py ayrıştırılarak giderildi.
-* Dosya Güvenliği: .gitignore eklenerek hassas log (app.log) ve cache dosyalarının sızması engellendi.
-* Dokümantasyon: Tüm API uç noktaları için Swagger UI üzerinden interaktif test imkanı sağlandı.
+
+* CORS desteği:uygulama, farklı kaynaklardan(origins)gelen isteklere yanıt verebilmesi için Flask-CORS ile yapılandırılmııştır.
+*Input Sanitization & Security: SQL Injection saldırılarına karşı SQLAlchemy ORM yapısı tercih edilmiştir. XSS saldırılarını önlemek amacıyla kullanıcı girdileri bleach kütüphanesi ile sterilize edilmektedir.
+*Şifre Politikası: Kullanıcı güvenliği için kayıt sırasında minimum 8 karakter uzunluğunda ve en az bir rakam içeren şifre kullanımı zorunlu tutulmaktadır.
+* Sayfalama (Pagination): Ürün listelemede sayfalama desteği eklendi. Meta bilgiler (toplam kayıt, sayfa sayısı vb.) JSON yanıtına dahil edildi.
+* Güvenlik: Flask-Limiter ile Rate Limiting, Bleach ile Input Sanitization ve güçlü şifre politikası (8+ karakter & rakam) uygulandı.
+* Erişilebilirlik: Flask-CORS entegrasyonu tamamlandı.
+* Test Kapsamı: Yeni eklenen tüm güvenlik ve yönetim özellikleri için otomatik test senaryoları yazıldı.
 
 ##  API Testleri ve Sonuçlar 
 
@@ -59,7 +64,7 @@ Olmayan Ürünü Silme Denemesi,DELETE /product/999,404,✅ Geçti
 örnek:
 #kullanıcı kaydı(Post/Register)
 {
-    "username:"yeni_kullanici",
+    "username":"yeni_kullanici",
     "password":123
 }
 

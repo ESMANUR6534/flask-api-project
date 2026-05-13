@@ -5,7 +5,9 @@ import datetime
 import os
 from functools import wraps 
 from werkzeug.security import generate_password_hash,check_password_hash
+from extensions import limiter
 import logging
+import bleach
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -33,6 +35,7 @@ def token_required(f):
     return decorated
 
 @auth_bp.route("/register" , methods=["POST"])
+@limiter.limit("5 per minute")
 def register():
     """
     Yeni kullanici kaydi olusturur
@@ -60,9 +63,17 @@ def register():
     if not data:
         return jsonify({"message":"JSON verisi bulunamadi"}),400
     
-    user_name=data.get("nm")
-    user_email=data.get("email")
-    raw_password=data.get("password")
+    user_name = bleach.clean(data.get("nm",""), tags=[],strip=True)
+    user_email= bleach.clean(data.get("email",""), tags=[],strip=True)
+    raw_password= data.get("password","")
+
+    if len(raw_password) < 8 or not any(char.isdigit() for char in raw_password):
+        logging.warning(f"Zayif sifre denemesi:{user_name}")
+        return jsonify ({
+            "status":"error",
+            "message":"sifre en az 8 karakterli olmali ve en az bir rakam icermelidir!"
+        }), 400
+  
 
     if not user_name or not user_email or not raw_password:
         return jsonify({"message":"Eksik bilgi gonderdiniz"}),400
@@ -78,6 +89,7 @@ def register():
         return jsonify({"message":f"kayit sirasinda hata oldu:{str(e)}"}),500   
     
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     """
     Kullanici girişi yapar ve JWT döner
