@@ -126,6 +126,7 @@ datetime.timedelta(days=7)
          "access_token":token,
          "refresh_token":refresh_token
         }),200
+    logging.warning(f"hatali giris denemesi: Kullanici adi -> {user_input}")
     return jsonify({"message":"hatali kullanici adi veya sifre!"}),401
 
 @auth_bp.route("/refresh", methods=["POST"])
